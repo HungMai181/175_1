@@ -10,6 +10,7 @@
  *      X-axis goes from 0 to 199
  *      Y-axis goes from 0 to 99
  *      'q' to quit
+ *      'l' to toggle between DDA and Bresenham
  * 
  */
 
@@ -102,6 +103,7 @@ int *nPoint;
 float ***coor;
 //  screen buffer, buffer[x-coor][y-coor]
 int **buffer;
+bool isDDA;
 
 
 
@@ -143,8 +145,9 @@ void check();
 //      #
 void quit();
 void setPixel(int x, int y);
+void showStatus();
 void lineDDA(int x0, int y0, int xEnd, int yEnd);
-
+void lineBres(int x0, int y0, int xEnd, int yEnd);
 
 
 //      #
@@ -205,7 +208,7 @@ int main(int argc, char **argv)
             coor[i][j][2] = 1.0;
         }
     }
-
+    isDDA = true;
 
 
     //      #
@@ -283,22 +286,32 @@ void display()
     //  draw lines
     for(int i = 0; i < nPoly; i++) {
         for(int j = 0; j < nPoint[i]-1; j++) {
-            //  draw line between current point and next point, exclude line from first to last point
-            lineDDA(coor[i][j][0], coor[i][j][1], coor[i][j+1][0], coor[i][j+1][1]);
+            if(isDDA) {
+                //  draw line between current point and next point, exclude line from first to last point
+                lineDDA(coor[i][j][0], coor[i][j][1], coor[i][j+1][0], coor[i][j+1][1]);
+            }
+            else {
+                lineBres(coor[i][j][0], coor[i][j][1], coor[i][j+1][0], coor[i][j+1][1]);
+            }
         }
-        //  draw line from first to last point
-        lineDDA(coor[i][0][0], coor[i][0][1], coor[i][nPoint[i]-1][0], coor[i][nPoint[i]-1][1]);
+        if(isDDA) {
+            //  draw line from first to last point
+            lineDDA(coor[i][0][0], coor[i][0][1], coor[i][nPoint[i]-1][0], coor[i][nPoint[i]-1][1]);
+        }
+        else {
+            lineBres(coor[i][0][0], coor[i][0][1], coor[i][nPoint[i]-1][0], coor[i][nPoint[i]-1][1]);
+        }
     }
+
     //  display the pixel that is turned on in screen buffer, any transformation will be acted on screen buffer
 	for(int x = 0; x < grid_width; x++) {
         for(int y = 0; y < grid_height; y++)
         {
             if(buffer[x][y]) draw_pix(x, y);
+            //  clear screen buffer, prepare for new changes to take place
+            buffer[x][y] = 0;
         }
     }
-
-
-
     //      #
     //     ###
     //    #####
@@ -368,7 +381,15 @@ void key(unsigned char ch, int x, int y)
         case 'q':
             quit();
             break;
-
+        case 'l':
+            if(isDDA) {
+                isDDA = false;
+            } 
+            else {
+                isDDA = true;
+            }
+            showStatus();
+            break;
 
 
         //      #
@@ -471,6 +492,15 @@ void setPixel(int x, int y) {
     buffer[x][y] = 1;
 }
 
+void showStatus() {
+    std::cout << "\nLine Algorithm: ";
+    if(isDDA) std::cout << "DDA";
+    else std::cout << "Bresenham";
+    std::cout << "\nTransformation Mode: ";
+
+    std::cout << "\n" << std::endl;    
+}
+
 void lineDDA(int x0, int y0, int xEnd, int yEnd) {
     int dx = xEnd - x0, dy = yEnd - y0, steps, k;
     float xIncrement, yIncrement, x = x0, y = y0;
@@ -489,8 +519,78 @@ void lineDDA(int x0, int y0, int xEnd, int yEnd) {
         setPixel(round(x), round(y));
     }
 }
-
-
+/*
+void lineBres(int x0, int y0, int xEnd, int yEnd) {
+    int dx = fabs(xEnd - x0), dy = fabs(yEnd - y0);
+    int p = 2 * dy - dx;
+    int twoDy = 2 * dy, twoDyMinusDx = 2 * (dy - dx);
+    int x, y;
+    //  Determine which endpoint to use as start position.
+    if (x0 > xEnd) {
+        x = xEnd;
+        y = yEnd;
+        xEnd = x0;
+    }
+    else {
+        x = x0;
+        y = y0;
+    }  
+    setPixel(x, y);
+    while(x < xEnd) {
+        x++;
+        if(p < 0)
+            p += twoDy;
+        else {
+            y++;
+            p += twoDyMinusDx;
+        }
+    setPixel (x, y);
+    }   
+}*/
+void lineBres(int x0, int y0, int xEnd, int yEnd) {
+    int dx = fabs(xEnd - x0), dy = fabs(yEnd - y0);
+    //  m < 1 boolean
+    bool mlt1 = dx > dy;
+    int p = (mlt1 ? 2*dy - dx : 2*dx - dy);
+    int twoD = 2*(mlt1 ? dy : dx), twoDMinusD = 2 * (mlt1 ? dy - dx : dx - dy);
+    int x, y;
+    /* Determine which endpoint to use as start position. */
+    //  if(m < 1 and x0 < xEnd or m >= 1 and y0 > yEnd) then switch
+    if(mlt1 && x0 > xEnd || !mlt1 && y0 > yEnd) {
+        //  switch x0 and xEnd
+        x = xEnd;
+        xEnd = x0;
+        x0 = x;
+        //  switch y0 and yEnd
+        y = yEnd;
+        yEnd = y0;
+        y0 = y;
+    }
+    else {
+        x = x0;
+        y = y0;
+    }  
+    setPixel(x, y);
+    while(mlt1 && x < xEnd || !mlt1 && y < yEnd) {
+        //  if m < 1 then draw along x-axis
+        if(mlt1) { x++; }
+        else { y++; }
+        if(p < 0)
+            p += twoD;
+        else {
+            if(mlt1) {
+                if(y0 < yEnd) { y++; }
+                else { y--; }
+            }
+            else {
+                if(x0 < xEnd) { x++; }
+                else { x--; }
+            }
+            p += twoDMinusD;
+        }
+        setPixel(x, y);
+    }   
+}
 
 
 //      #
