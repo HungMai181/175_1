@@ -5,17 +5,20 @@
 
 /*
  *  Manual:
- *      This progam assume that the input file is in the correct format.
- *      To run program use ./pro_1 input_file_name.some_extention.
- *      Display size is 100 pixels high and 200 pixels wide.
- *      X-axis goes from 0 to 199.
- *      Y-axis goes from 0 to 99.
- *      Press 'q' to quit.
- *      Press 'l' to toggle between DDA and Bresenham.
- *      Press 'n' to change to normal mode (default).
- *      Press 't' to change to translate mode.
- *      Press 's' to change to scale mode.
- *      Press 'r' to change to rotate mode.
+ *   - This progam assume that the input file is in the correct format.
+ *   - To run program use ./pro_1 input_file_name.some_extention.
+ *   - Display size is 100 pixels high and 200 pixels wide.
+ *   - X-axis goes from 0 to 199.
+ *   - Y-axis goes from 0 to 99.
+ *   - Press 'q' to quit.
+ *   - Press 'l' to toggle between DDA and Bresenham.
+ *   - Press 'n' to change to normal mode (default).
+ *   - Press 't' to change to translate mode.
+ *   - Press 's' to change to scale mode.
+ *   - Press 'r' to change to rotate mode.
+ *   - Some transformations require user to click and drag, try to avoid 
+ *     changing mode while dragging, unexpected things (glitches) may happen.
+ *      
  */
 
 /*
@@ -30,10 +33,6 @@ for(int i=0;i<nPoly;i++){
 }
 
 */
-
-
-
-
 
 #ifdef WIN32
 #include <windows.h>
@@ -75,9 +74,6 @@ for(int i=0;i<nPoly;i++){
 //     ###
 // ADDED CODES
 
-
-
-
 /****set in main()****/
 //the number of pixels in the grid
 int grid_width;
@@ -108,7 +104,8 @@ float ***coor;
 //  screen buffer, buffer[x-coor][y-coor]
 int **buffer;
 bool isDDA;
-int xMin, xMax, yMin, yMax;
+//  used for cropping
+int minX, maxX, minY, maxY;
 enum Mode
 {
     NONE,
@@ -119,6 +116,8 @@ enum Mode
 };
 //  transformation mode
 Mode mode;
+//  previous x, y mouse action coordinates
+int preX, preY;
 
 
 //      #
@@ -128,17 +127,6 @@ Mode mode;
 //     ###
 //     ###
 // ADDED CODES
-
-
-
-
-
-
-
-
-
-
-
 
 void init();
 void idle();
@@ -162,6 +150,7 @@ void setPixel(int x, int y);
 void showStatus();
 void lineDDA(int x0, int y0, int xEnd, int yEnd);
 void lineBres(int x0, int y0, int xEnd, int yEnd);
+void resetBound();
 void rasterize(int pIndex);
 
 
@@ -176,7 +165,7 @@ void rasterize(int pIndex);
 
 int main(int argc, char **argv)
 {
-    
+
     //the number of pixels in the grid
     grid_width = 200;
     grid_height = 100;
@@ -190,7 +179,6 @@ int main(int argc, char **argv)
     win_height = grid_height*pixel_size;
     win_width = grid_width*pixel_size;
 
-
     // ADDED CODES
     //     ###
     //     ###
@@ -198,7 +186,7 @@ int main(int argc, char **argv)
     //    #####
     //     ###
     //      #
-    xMin = 0, xMax = grid_width - 1, yMin = 0, yMax = grid_height - 1;
+    resetBound();
     mode = NONE;
     std::ifstream in(argv[1]);
     in >> nPoly;
@@ -321,8 +309,8 @@ void display()
     }
 
     //  display the pixel that is turned on in screen buffer, any transformation will be acted on screen buffer
-	for(int x = xMin; x <= xMax; x++) {
-        for(int y = yMin; y <= yMax; y++)
+	for(int x = minX; x <= maxX; x++) {
+        for(int y = minY; y <= maxY; y++)
         {
             if(buffer[x][y]) draw_pix(x, y);
             //  clear screen buffer, prepare for new changes to take place
@@ -408,6 +396,7 @@ void key(unsigned char ch, int x, int y)
             break;
         case 'n': // switch to normal mode
             mode = NONE;
+            resetBound();
             break;
         case 'c': // crop mode
             mode = CROP;
@@ -462,27 +451,91 @@ void mouse(int button, int state, int x, int y)
 {
     //print the pixel location, and the grid location
     printf ("MOUSE AT PIXEL: %d %d, GRID: %d %d\n",x,y,(int)(x/pixel_size),(int)((win_height-y)/pixel_size));
-	switch(button)
+
+    // ADDED CODES
+    //     ###
+    //     ###
+    //   #######
+    //    #####
+    //     ###
+    //      #
+    int gridX = (int)(x/pixel_size), gridY = (int)((win_height-y)/pixel_size);
+    //      #
+    //     ###
+    //    #####
+    //   #######
+    //     ###
+    //     ###
+    // ADDED CODES
+
+    switch(button)
 	{
 		case GLUT_LEFT_BUTTON: //left button
             printf("LEFT ");
+            // ADDED CODES
+            //     ###
+            //     ###
+            //   #######
+            //    #####
+            //     ###
+            //      #
+            //  if button down
+            if(state == GLUT_DOWN) {
+                switch(mode) {
+                    case NONE:
 
+                        break;
+                    case CROP:
+                        preX = gridX;
+                        preY = gridY;
+                        break;
+                    case TRAN:
+                        
+                        break;
+                    case SCAL:
+                        
+                        break;
+                    case ROTA:
+                        
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else {
+                switch(mode) {
+                    case NONE:
 
-
-
-
-
-
+                        break;
+                    case CROP:
+                        if(gridX > preX) { minX = preX; maxX = gridX; }
+                        else { minX = gridX; maxX = preX; }
+                        if(gridY > preY) { minY = preY; maxY = gridY; }
+                        else { minY = gridY; maxY = preY; }
+                        break;
+                    case TRAN:
+                        
+                        break;
+                    case SCAL:
+                        
+                        break;
+                    case ROTA:
+                        
+                        break;
+                    default:
+                        break;
+                }
+            }
+            //      #
+            //     ###
+            //    #####
+            //   #######
+            //     ###
+            //     ###
+            // ADDED CODES
             break;
 		case GLUT_RIGHT_BUTTON: //right button
             printf("RIGHT ");
-
-
-
-
-
-
-            
 		default:
             printf("UNKNOWN "); //any other mouse button
 			break;
@@ -646,9 +699,15 @@ void lineBres(int x0, int y0, int xEnd, int yEnd) {
     }   
 }
 
+void resetBound() {
+    minX = minY = 0;
+    maxX = grid_width - 1;
+    maxY = grid_height - 1;
+}
+
 //  rasterize a polygon, indicated by pIndex
 void rasterize(int pIndex) {
-
+    int 
 
 }
 
