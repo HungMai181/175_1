@@ -276,6 +276,15 @@ void display()
             setPixel(round(coor[i][j][0]), round(coor[i][j][1]));
         }
     }
+    //  draw lines
+    for(int i = 0; i < nPoly; i++) {
+        for(int j = 0; j < nPoint[i]-1; j++) {
+            //  draw line between current point and next point, exclude line from first to last point
+            lineDDA(coor[i][j][0], coor[i][j][1], coor[i][j+1][0], coor[i][j+1][1]);
+        }
+        //  draw line from first to last point
+        lineDDA(coor[i][0][0], coor[i][0][1], coor[i][nPoint[i]-1][0], coor[i][nPoint[i]-1][1]);
+    }
     //  display the pixel that is turned on in screen buffer, any transformation will be acted on screen buffer
 	for(int x = 0; x < grid_width; x++) {
         for(int y = 0; y < grid_height; y++)
