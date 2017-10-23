@@ -5,6 +5,10 @@
 
 /*
  *  Manual:
+ *      To run program use ./pro_1 input_file_name.some_extention
+ *      Display size is 100 pixels high and 200 pixels wide
+ *      X-axis goes from 0 to 199
+ *      Y-axis goes from 0 to 99
  *      'q' to quit
  * 
  */
@@ -437,6 +441,7 @@ void check()
 //     ###
 //      #
 void quit() {
+    //TODO: change this so that the output file is the original or is of user choice
     std::ofstream out("outputs.dat");
     out << nPoly << "\n\n";
     for(int i = 0; i < nPoly; i++) {
