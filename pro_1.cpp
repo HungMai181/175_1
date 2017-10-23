@@ -13,6 +13,8 @@
  *   - Press 'q' to quit.
  *   - Press 'l' to toggle between DDA and Bresenham.
  *   - Press 'n' to change to normal mode (default).
+ *   - Press 'c' to change to crop mode: left click (and hold) then drag mouse
+ *     accross the window to select a rectangular region.
  *   - Press 't' to change to translate mode.
  *   - Press 's' to change to scale mode.
  *   - Press 'r' to change to rotate mode.
@@ -151,7 +153,7 @@ void showStatus();
 void lineDDA(int x0, int y0, int xEnd, int yEnd);
 void lineBres(int x0, int y0, int xEnd, int yEnd);
 void resetBound();
-void rasterize(int pIndex);
+void rasterize(int iP);
 
 
 //      #
@@ -705,10 +707,51 @@ void resetBound() {
     maxY = grid_height - 1;
 }
 
-//  rasterize a polygon, indicated by pIndex
-void rasterize(int pIndex) {
-    int 
+//  true when scan-line hit polygon vertex
+bool hitVertex(int x, int y, int iP) {
+    //  itterate through all poin in polygon iP
+    for(int p = 0; p < nPoint[iP]; p++) {
+        if(x == round(coor[iP][p][0]) && y == round(coor[iP][p][1])) { return true;}
+    }
+    return false;
+}
+//  true when polygon intersect an edge
+bool intersected(int x, int y, int iP, int left, int right, int low, int up) {
+    //  itterate through edges and test intersection,
+    for(int p = 0; p < nPoint[iP] - 1; p++) {
+        float x0 = coor[iP][p][0], y0, xE, yE;
+    }
+    return false;
+}
 
+//  rasterize a polygon, indicated by pIndex
+void rasterize(int iP) {
+    //  used to hold index of rasterize region
+    int start = grid_width, end = 0, upBnd = 0, lowBnd = grid_height;
+    //  set rasterize region to be a rectangle, large enough to surround the polygon
+    for(int p = 0; p < nPoint[iP]; p++) {
+        if(coor[iP][p][0] < start) { start = coor[iP][p][0]; }
+        if(coor[iP][p][0] > end) { end = coor[iP][p][0]; }
+        if(coor[iP][p][1] < lowBnd) { lowBnd = coor[iP][p][1]; }
+        if(coor[iP][p][1] > upBnd) { upBnd = coor[iP][p][1]; }
+    }
+    //  indicates that the pixeel needed to be rasterize
+    bool needFill = false;
+    //  start rasterizing
+    for(int y = lowBnd; y <= upBnd; y++) {
+        for(int x = start; x <= end; x++) {
+            //  if scan-line hit vertex, keep the value of needFill
+            if(hitVertex(x, y, iP)) {
+                //  do nothing
+            }
+            //  if scan-line intersect edge, toggle value of needFill
+            else if(intersected(x, y, iP, start, end, lowBnd, upBnd)) {
+                if(needFill) { needFill = false; }
+                else { needFill = true; }
+            }
+            if(needFill) { setPixel(x, y); }
+        }
+    }
 }
 
 
