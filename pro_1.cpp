@@ -5,12 +5,13 @@
 
 /*
  *  Manual:
+ *      This progam assume that the input file is in the correct format
  *      To run program use ./pro_1 input_file_name.some_extention
  *      Display size is 100 pixels high and 200 pixels wide
  *      X-axis goes from 0 to 199
  *      Y-axis goes from 0 to 99
- *      'q' to quit
- *      'l' to toggle between DDA and Bresenham
+ *      Press 'q' to quit
+ *      Press 'l' to toggle between DDA and Bresenham
  * 
  */
 
@@ -104,6 +105,7 @@ float ***coor;
 //  screen buffer, buffer[x-coor][y-coor]
 int **buffer;
 bool isDDA;
+int xMin, xMax, yMin, yMax;
 
 
 
@@ -148,6 +150,7 @@ void setPixel(int x, int y);
 void showStatus();
 void lineDDA(int x0, int y0, int xEnd, int yEnd);
 void lineBres(int x0, int y0, int xEnd, int yEnd);
+void rasterize(int pIndex);
 
 
 //      #
@@ -183,6 +186,7 @@ int main(int argc, char **argv)
     //    #####
     //     ###
     //      #
+    xMin = 0, xMax = grid_width - 1, yMin = 0, yMax = grid_height - 1;
     std::ifstream in(argv[1]);
     in >> nPoly;
     nPoint = new int[nPoly];
@@ -304,8 +308,8 @@ void display()
     }
 
     //  display the pixel that is turned on in screen buffer, any transformation will be acted on screen buffer
-	for(int x = 0; x < grid_width; x++) {
-        for(int y = 0; y < grid_height; y++)
+	for(int x = xMin; x <= xMax; x++) {
+        for(int y = yMin; y <= yMax; y++)
         {
             if(buffer[x][y]) draw_pix(x, y);
             //  clear screen buffer, prepare for new changes to take place
@@ -501,6 +505,7 @@ void showStatus() {
     std::cout << "\n" << std::endl;    
 }
 
+// lineDDA copied straight out of the book
 void lineDDA(int x0, int y0, int xEnd, int yEnd) {
     int dx = xEnd - x0, dy = yEnd - y0, steps, k;
     float xIncrement, yIncrement, x = x0, y = y0;
@@ -520,6 +525,7 @@ void lineDDA(int x0, int y0, int xEnd, int yEnd) {
     }
 }
 
+// modified copy of the book's version, add case for m > 1 and negative m
 void lineBres(int x0, int y0, int xEnd, int yEnd) {
     int dx = fabs(xEnd - x0), dy = fabs(yEnd - y0);
     //  m < 1 boolean
@@ -563,6 +569,12 @@ void lineBres(int x0, int y0, int xEnd, int yEnd) {
         }
         setPixel(x, y);
     }   
+}
+
+//  rasterize a polygon, indicated by pIndex
+void rasterize(int pIndex) {
+    
+
 }
 
 
