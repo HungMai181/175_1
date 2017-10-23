@@ -5,14 +5,17 @@
 
 /*
  *  Manual:
- *      This progam assume that the input file is in the correct format
- *      To run program use ./pro_1 input_file_name.some_extention
- *      Display size is 100 pixels high and 200 pixels wide
- *      X-axis goes from 0 to 199
- *      Y-axis goes from 0 to 99
- *      Press 'q' to quit
- *      Press 'l' to toggle between DDA and Bresenham
- * 
+ *      This progam assume that the input file is in the correct format.
+ *      To run program use ./pro_1 input_file_name.some_extention.
+ *      Display size is 100 pixels high and 200 pixels wide.
+ *      X-axis goes from 0 to 199.
+ *      Y-axis goes from 0 to 99.
+ *      Press 'q' to quit.
+ *      Press 'l' to toggle between DDA and Bresenham.
+ *      Press 'n' to change to normal mode (default).
+ *      Press 't' to change to translate mode.
+ *      Press 's' to change to scale mode.
+ *      Press 'r' to change to rotate mode.
  */
 
 /*
@@ -106,7 +109,16 @@ float ***coor;
 int **buffer;
 bool isDDA;
 int xMin, xMax, yMin, yMax;
-
+enum Mode
+{
+    NONE,
+    CROP,
+    TRAN,
+    SCAL,
+    ROTA
+};
+//  transformation mode
+Mode mode;
 
 
 //      #
@@ -187,6 +199,7 @@ int main(int argc, char **argv)
     //     ###
     //      #
     xMin = 0, xMax = grid_width - 1, yMin = 0, yMax = grid_height - 1;
+    mode = NONE;
     std::ifstream in(argv[1]);
     in >> nPoly;
     nPoint = new int[nPoly];
@@ -382,17 +395,31 @@ void key(unsigned char ch, int x, int y)
         //    #####
         //     ###
         //      #
-        case 'q':
+        case 'q': // quit
             quit();
             break;
-        case 'l':
+        case 'l': // toggle line algorithm
             if(isDDA) {
                 isDDA = false;
             } 
             else {
                 isDDA = true;
             }
-            showStatus();
+            break;
+        case 'n': // switch to normal mode
+            mode = NONE;
+            break;
+        case 'c': // crop mode
+            mode = CROP;
+            break;
+        case 't': // translate mode
+            mode = TRAN;
+            break;
+        case 's': // scale mode
+            mode = SCAL;
+            break;
+        case 'r': // rotate mode
+            mode = ROTA;
             break;
 
 
@@ -409,6 +436,22 @@ void key(unsigned char ch, int x, int y)
             printf("User hit the \"%c\" key\n",ch);
 			break;
 	}
+    // ADDED CODES
+    //     ###
+    //     ###
+    //   #######
+    //    #####
+    //     ###
+    //      #
+    showStatus();
+    //      #
+    //     ###
+    //    #####
+    //   #######
+    //     ###
+    //     ###
+    // ADDED CODES
+
     //redraw the scene after keyboard input
 	glutPostRedisplay();
 }
@@ -423,9 +466,23 @@ void mouse(int button, int state, int x, int y)
 	{
 		case GLUT_LEFT_BUTTON: //left button
             printf("LEFT ");
+
+
+
+
+
+
+
             break;
 		case GLUT_RIGHT_BUTTON: //right button
             printf("RIGHT ");
+
+
+
+
+
+
+            
 		default:
             printf("UNKNOWN "); //any other mouse button
 			break;
@@ -501,7 +558,25 @@ void showStatus() {
     if(isDDA) std::cout << "DDA";
     else std::cout << "Bresenham";
     std::cout << "\nTransformation Mode: ";
-
+    switch(mode) {
+        case NONE:
+            std::cout << "Normal";
+            break;
+        case CROP:
+            std::cout << "Crop";
+            break;
+        case TRAN:
+            std::cout << "Translate";
+            break;
+        case SCAL:
+            std::cout << "Scale";
+            break;
+        case ROTA:
+            std::cout << "Rotate";
+            break;
+        default:
+            break;
+    }
     std::cout << "\n" << std::endl;    
 }
 
@@ -573,7 +648,7 @@ void lineBres(int x0, int y0, int xEnd, int yEnd) {
 
 //  rasterize a polygon, indicated by pIndex
 void rasterize(int pIndex) {
-    
+
 
 }
 
